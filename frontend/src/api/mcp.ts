@@ -64,3 +64,21 @@ export const systemApi = {
     return api.get<any, ApiResponse<SystemInfo>>('/system/info')
   },
 }
+
+export const authApi = {
+  status() {
+    return api.get<any, ApiResponse<{ enabled: boolean; initialized: boolean }>>('/auth/status')
+  },
+  login(username: string, password: string) {
+    return api.post<any, ApiResponse<{ token: string; username: string }>>('/auth/login', { username, password })
+  },
+  setup(username: string, password: string) {
+    return api.post<any, ApiResponse<{ token: string; username: string }>>('/auth/setup', { username, password })
+  },
+  changePassword(old_password: string, new_password: string) {
+    return api.post<any, ApiResponse>('/auth/change-password', { old_password, new_password })
+  },
+  toggle(enabled: boolean) {
+    return api.post<any, ApiResponse<{ enabled: boolean }>>('/auth/toggle', { enabled })
+  },
+}

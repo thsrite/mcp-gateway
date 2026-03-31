@@ -51,16 +51,21 @@ async function handleDelete(id: number, name: string) {
     store.fetchServers()
   } catch { /* cancelled */ }
 }
+
+function statusText(status: string) {
+  if (status === 'running') return t('server.statusRunning')
+  if (status === 'stopped') return t('server.statusStopped')
+  return t('server.statusError')
+}
 </script>
 
 <template>
-  <div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px">
+  <div class="page-container" style="padding-top: 32px; padding-bottom: 40px">
+    <!-- Section Header -->
+    <div class="section-header">
       <div>
-        <h3 style="font-size: 16px; font-weight: 600">{{ t('server.title') }}</h3>
-        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px">
-          {{ store.servers.length }} {{ t('dashboard.totalServers').toLowerCase() }}
-        </p>
+        <h2 class="section-title">{{ t('server.title') }}</h2>
+        <p class="section-subtitle">{{ store.servers.length }} {{ t('dashboard.totalServers').toLowerCase() }}</p>
       </div>
       <el-button type="primary" round @click="showAddDialog = true">
         <el-icon style="margin-right: 6px"><Plus /></el-icon>
@@ -68,75 +73,76 @@ async function handleDelete(id: number, name: string) {
       </el-button>
     </div>
 
-    <div class="card">
-      <div class="card-body" style="padding: 0">
-        <el-table :data="store.servers" v-loading="store.loading" style="width: 100%"
-          :header-cell-style="{ background: '#F8FAFC', color: '#475569', fontWeight: 600, fontSize: '13px' }"
-          :row-style="{ cursor: 'pointer' }"
-          @row-click="(row: any) => router.push(`/servers/${row.id}`)"
-        >
-          <el-table-column :label="t('common.name')" min-width="180">
-            <template #default="{ row }">
-              <div style="display: flex; align-items: center; gap: 10px">
-                <div style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0"
-                  :style="{
-                    background: row.project_type === 'python' ? '#EEF2FF' : '#FFF7ED',
-                    color: row.project_type === 'python' ? '#4F6EF7' : '#EA580C'
-                  }"
-                >
-                  {{ row.project_type === 'python' ? 'Py' : 'JS' }}
-                </div>
-                <div>
-                  <div style="font-weight: 500; color: var(--text-primary)">{{ row.name }}</div>
-                  <div style="font-size: 12px; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
-                    {{ row.github_url || row.local_path }}
-                  </div>
-                </div>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('common.status')" width="110">
-            <template #default="{ row }">
-              <span class="status-badge" :class="row.status">
-                {{ row.status === 'running' ? t('server.statusRunning') : row.status === 'stopped' ? t('server.statusStopped') : t('server.statusError') }}
-              </span>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('server.toolsCount')" width="80" align="center">
-            <template #default="{ row }">
-              <span style="font-weight: 600; color: var(--primary)">{{ row.tools_count }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('server.commit')" width="100">
-            <template #default="{ row }">
-              <el-tag v-if="row.last_commit" size="small" effect="plain" style="font-family: monospace">
-                {{ row.last_commit?.slice(0, 7) }}
-              </el-tag>
-              <span v-else style="color: var(--text-muted)">-</span>
-            </template>
-          </el-table-column>
-          <el-table-column :label="t('common.actions')" width="260" fixed="right">
-            <template #default="{ row }">
-              <div style="display: flex; gap: 4px" @click.stop>
-                <el-button v-if="row.status !== 'running'" size="small" type="success" plain round @click="handleStart(row.id)">
-                  {{ t('server.start') }}
-                </el-button>
-                <el-button v-if="row.status === 'running'" size="small" type="warning" plain round @click="handleStop(row.id)">
-                  {{ t('server.stop') }}
-                </el-button>
-                <el-button v-if="row.status === 'running'" size="small" plain round @click="handleRestart(row.id)">
-                  {{ t('server.restart') }}
-                </el-button>
-                <el-button v-if="row.github_url" size="small" type="info" plain round @click="handleUpdate(row.id)">
-                  <el-icon><Refresh /></el-icon>
-                </el-button>
-                <el-button size="small" type="danger" plain round @click="handleDelete(row.id, row.name)">
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
+    <!-- Server Cards Grid -->
+    <div v-if="store.servers.length" class="server-grid" v-loading="store.loading">
+      <div
+        v-for="server in store.servers"
+        :key="server.id"
+        class="server-card"
+        :class="server.status"
+        @click="router.push(`/servers/${server.id}`)"
+      >
+        <div class="server-card-top">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <div class="server-card-icon" :class="server.project_type === 'python' ? 'python' : 'node'">
+              {{ server.project_type === 'python' ? 'Py' : 'JS' }}
+            </div>
+            <div>
+              <div class="server-card-name">{{ server.name }}</div>
+              <div class="server-card-url">{{ server.github_url || server.local_path }}</div>
+            </div>
+          </div>
+          <span class="status-badge" :class="server.status">
+            {{ statusText(server.status) }}
+          </span>
+        </div>
+
+        <div class="server-card-meta">
+          <div class="server-card-meta-item">
+            <el-icon :size="14"><Operation /></el-icon>
+            <span class="meta-value">{{ server.tools_count }}</span> tools
+          </div>
+          <div class="server-card-meta-item" v-if="server.last_commit">
+            <el-icon :size="14"><DocumentCopy /></el-icon>
+            <span class="meta-value" style="font-family: monospace">{{ server.last_commit?.slice(0, 7) }}</span>
+          </div>
+          <div class="server-card-meta-item" v-if="server.auto_update">
+            <el-icon :size="14"><Refresh /></el-icon>
+            {{ t('server.autoUpdate') }}
+          </div>
+        </div>
+
+        <div class="server-card-actions" @click.stop>
+          <el-button v-if="server.status !== 'running'" size="small" type="success" plain round @click="handleStart(server.id)">
+            {{ t('server.start') }}
+          </el-button>
+          <el-button v-if="server.status === 'running'" size="small" type="warning" plain round @click="handleStop(server.id)">
+            {{ t('server.stop') }}
+          </el-button>
+          <el-button v-if="server.status === 'running'" size="small" plain round @click="handleRestart(server.id)">
+            {{ t('server.restart') }}
+          </el-button>
+          <el-button v-if="server.github_url" size="small" type="info" plain round @click="handleUpdate(server.id)">
+            <el-icon><Refresh /></el-icon>
+          </el-button>
+          <el-button size="small" type="danger" plain round @click="handleDelete(server.id, server.name)">
+            <el-icon><Delete /></el-icon>
+          </el-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else-if="!store.loading" class="card">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <el-icon :size="28"><Monitor /></el-icon>
+        </div>
+        <div class="empty-state-text">{{ t('common.noData') }}</div>
+        <el-button type="primary" round style="margin-top: 16px" @click="showAddDialog = true">
+          <el-icon style="margin-right: 6px"><Plus /></el-icon>
+          {{ t('server.addServer') }}
+        </el-button>
       </div>
     </div>
 

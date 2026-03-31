@@ -1,7 +1,7 @@
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import McpServerModel
+from app.db.models import McpServerModel, UserModel
 
 
 async def create_server(session: AsyncSession, **kwargs) -> McpServerModel:
@@ -71,3 +71,34 @@ async def list_auto_update_servers(session: AsyncSession) -> list[McpServerModel
         )
     )
     return list(result.scalars().all())
+
+
+# ---- User CRUD ----
+
+async def create_user(session: AsyncSession, username: str, password_hash: str) -> UserModel:
+    user = UserModel(username=username, password_hash=password_hash)
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
+async def get_user_by_username(session: AsyncSession, username: str) -> UserModel | None:
+    result = await session.execute(
+        select(UserModel).where(UserModel.username == username)
+    )
+    return result.scalar_one_or_none()
+
+
+async def count_users(session: AsyncSession) -> int:
+    result = await session.execute(select(func.count(UserModel.id)))
+    return result.scalar() or 0
+
+
+async def update_user_password(session: AsyncSession, user_id: int, password_hash: str) -> bool:
+    user = await session.get(UserModel, user_id)
+    if not user:
+        return False
+    user.password_hash = password_hash
+    await session.commit()
+    return True

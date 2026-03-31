@@ -29,12 +29,19 @@ class LogConfig(BaseModel):
     max_lines_per_server: int = 1000
 
 
+class AuthConfig(BaseModel):
+    enabled: bool = False
+    secret_key: str = "mcp-gateway-secret-change-me"
+    token_expire_minutes: int = 1440  # 24 hours
+
+
 class AppConfig(BaseSettings):
     server: ServerConfig = ServerConfig()
     database: DatabaseConfig = DatabaseConfig()
     repos: ReposConfig = ReposConfig()
     scheduler: SchedulerConfig = SchedulerConfig()
     log: LogConfig = LogConfig()
+    auth: AuthConfig = AuthConfig()
 
 
 def load_config() -> AppConfig:

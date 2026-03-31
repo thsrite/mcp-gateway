@@ -14,3 +14,8 @@ scheduler:
 
 log:
   max_lines_per_server: 1000
+
+auth:
+  enabled: false
+  secret_key: "mcp-gateway-secret-change-me"
+  token_expire_minutes: 1440

@@ -24,6 +24,7 @@
   },
   "dashboard": {
     "title": "Overview",
+    "heroDesc": "Unified HTTP gateway for all your MCP servers",
     "totalServers": "Total Servers",
     "running": "Running",
     "stopped": "Stopped",
@@ -110,10 +111,39 @@
   },
   "settings": {
     "title": "Settings",
+    "general": "General",
     "gitPullInterval": "Git Pull Interval (min)",
     "healthCheckInterval": "Health Check Interval (sec)",
     "maxLogLines": "Max Log Lines / Server",
     "configFileTip": "Settings are stored in config.yaml. Restart the gateway after changes.",
-    "saveHint": "Online settings will be available in a future version."
+    "saveHint": "Online settings will be available in a future version.",
+    "authTitle": "Authentication",
+    "authEnabled": "Enabled",
+    "authDisabled": "Disabled",
+    "authEnabledTip": "Authentication is currently enabled. All API requests require a valid token.",
+    "authDisabledTip": "Authentication is currently disabled. All API requests are open.",
+    "authConfigHint": "To toggle authentication, edit auth.enabled in config.yaml and restart the gateway.",
+    "authDisableConfirm": "Disabling auth will make all API requests open without authentication. Continue?"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "loginDesc": "Sign in to access the gateway",
+    "setupDesc": "Create the admin account to get started",
+    "username": "Username",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "usernamePlaceholder": "Enter username",
+    "passwordPlaceholder": "Enter password",
+    "confirmPasswordPlaceholder": "Confirm password",
+    "createAdmin": "Create Admin",
+    "loginSuccess": "Login successful",
+    "setupSuccess": "Admin account created",
+    "passwordMismatch": "Passwords do not match",
+    "changePassword": "Change Password",
+    "oldPassword": "Current Password",
+    "newPassword": "New Password",
+    "passwordChanged": "Password changed successfully",
+    "createAndEnable": "Create Account & Enable Auth"
   }
 }

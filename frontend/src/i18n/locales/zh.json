@@ -24,6 +24,7 @@
   },
   "dashboard": {
     "title": "概览",
+    "heroDesc": "统一管理所有 MCP 服务的 HTTP 网关",
     "totalServers": "服务总数",
     "running": "运行中",
     "stopped": "已停止",
@@ -110,10 +111,39 @@
   },
   "settings": {
     "title": "系统设置",
+    "general": "通用设置",
     "gitPullInterval": "Git 拉取间隔（分钟）",
     "healthCheckInterval": "健康检查间隔（秒）",
     "maxLogLines": "最大日志行数 / 服务",
     "configFileTip": "设置存储于 config.yaml，修改后需重启网关生效。",
-    "saveHint": "未来版本将支持在线修改设置。"
+    "saveHint": "未来版本将支持在线修改设置。",
+    "authTitle": "身份认证",
+    "authEnabled": "已启用",
+    "authDisabled": "未启用",
+    "authEnabledTip": "身份认证已开启，所有 API 请求需要有效的令牌。",
+    "authDisabledTip": "身份认证未开启，所有 API 请求无需认证。",
+    "authConfigHint": "如需开关认证，请编辑 config.yaml 中的 auth.enabled 并重启网关。",
+    "authDisableConfirm": "关闭认证后所有 API 请求将无需令牌，确定关闭？"
+  },
+  "auth": {
+    "login": "登录",
+    "logout": "退出登录",
+    "loginDesc": "登录以访问网关管理",
+    "setupDesc": "创建管理员账户以开始使用",
+    "username": "用户名",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "usernamePlaceholder": "请输入用户名",
+    "passwordPlaceholder": "请输入密码",
+    "confirmPasswordPlaceholder": "请再次输入密码",
+    "createAdmin": "创建管理员",
+    "loginSuccess": "登录成功",
+    "setupSuccess": "管理员账户已创建",
+    "passwordMismatch": "两次密码不一致",
+    "changePassword": "修改密码",
+    "oldPassword": "当前密码",
+    "newPassword": "新密码",
+    "passwordChanged": "密码修改成功",
+    "createAndEnable": "创建账户并启用认证"
   }
 }
