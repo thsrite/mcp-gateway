@@ -1,9 +1,11 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path as _Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import FileResponse
 
 from app.config import BASE_DIR, settings
 from app.db.engine import close_db, init_db
@@ -129,6 +131,22 @@ def create_app() -> FastAPI:
     # Serve frontend static files (if built)
     frontend_dist = BASE_DIR / "frontend" / "dist"
     if frontend_dist.exists():
-        app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+        app.mount("/assets", StaticFiles(directory=str(frontend_dist / "assets")), name="static-assets")
+
+        # SPA fallback: serve index.html for any non-API, non-static route
+        index_html = frontend_dist / "index.html"
+
+        @app.middleware("http")
+        async def spa_fallback(request, call_next):
+            response = await call_next(request)
+            path = request.url.path
+            if (
+                response.status_code == 404
+                and not path.startswith("/api")
+                and not path.startswith("/assets")
+                and index_html.exists()
+            ):
+                return FileResponse(str(index_html))
+            return response
 
     return app
