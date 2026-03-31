@@ -65,7 +65,7 @@ class GitHubManager:
         )
         return stdout
 
-    async def clone(self, github_url: str) -> CloneResult:
+    async def clone(self, github_url: str, branch: str | None = None) -> CloneResult:
         repo_name = self._parse_repo_name(github_url)
         local_path = self.repos_dir / repo_name
 
@@ -73,10 +73,12 @@ class GitHubManager:
             logger.info(f"Repository already exists at {local_path}, pulling latest")
             await self._run_command(["git", "pull", "--ff-only"], cwd=local_path)
         else:
-            logger.info(f"Cloning {github_url} to {local_path}")
-            stdout, stderr, code = await self._run_command(
-                ["git", "clone", "--depth", "1", github_url, str(local_path)]
-            )
+            cmd = ["git", "clone", "--depth", "1"]
+            if branch:
+                cmd += ["-b", branch]
+            cmd += [github_url, str(local_path)]
+            logger.info(f"Cloning {github_url} (branch={branch or 'default'}) to {local_path}")
+            stdout, stderr, code = await self._run_command(cmd)
             if code != 0:
                 raise RuntimeError(f"git clone failed: {stderr}")
 

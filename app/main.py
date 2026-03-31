@@ -48,12 +48,12 @@ async def lifespan(app: FastAPI):
     aggregator = Aggregator(client_pool=client_pool)
     gateway_server = GatewayServer(aggregator=aggregator)
 
-    # Mount MCP protocol endpoints (routes already registered in create_app)
-    gateway_server.mount(app)
-    logger.info("MCP Gateway endpoints mounted")
-
     # Restore enabled servers
     await _restore_servers()
+
+    # Start MCP endpoint on dedicated port
+    mcp_port = settings.server.port + 1  # 9001
+    await gateway_server.start(host=settings.server.host, port=mcp_port)
 
     # Start scheduler
     scheduler = Scheduler(
@@ -65,12 +65,17 @@ async def lifespan(app: FastAPI):
     scheduler.start()
     logger.info("Scheduler started")
 
-    logger.info(f"MCP Gateway running at http://{settings.server.host}:{settings.server.port}")
+    logger.info(
+        f"MCP Gateway running:\n"
+        f"  Web UI:       http://{settings.server.host}:{settings.server.port}\n"
+        f"  MCP Endpoint: http://{settings.server.host}:{mcp_port}/mcp"
+    )
 
     yield
 
     # Shutdown
     scheduler.stop()
+    await gateway_server.stop()
     await client_pool.disconnect_all()
     await close_db()
     logger.info("MCP Gateway shut down")
@@ -121,41 +126,9 @@ def create_app() -> FastAPI:
     from app.api.router import api_router
     app.include_router(api_router, prefix="/api")
 
-    # Register MCP protocol routes BEFORE static file mount
-    _register_mcp_routes(app)
-
-    # Serve frontend static files (if built) - MUST be last
+    # Serve frontend static files (if built)
     frontend_dist = BASE_DIR / "frontend" / "dist"
     if frontend_dist.exists():
         app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
 
     return app
-
-
-def _register_mcp_routes(app: FastAPI):
-    """Register MCP SSE and Streamable HTTP routes as raw ASGI apps."""
-    from starlette.routing import Route
-    from starlette.responses import PlainTextResponse
-
-    async def sse_asgi(scope, receive, send):
-        if gateway_server is None:
-            resp = PlainTextResponse("Gateway not initialized", status_code=503)
-            await resp(scope, receive, send)
-            return
-        await gateway_server.handle_sse(scope, receive, send)
-
-    async def mcp_asgi(scope, receive, send):
-        if gateway_server is None:
-            resp = PlainTextResponse("Gateway not initialized", status_code=503)
-            await resp(scope, receive, send)
-            return
-        await gateway_server.handle_streamable_http(scope, receive, send)
-
-    # Mount as raw ASGI apps via Route.app override
-    sse_route = Route("/sse", endpoint=lambda r: None)
-    sse_route.app = sse_asgi
-    mcp_route = Route("/mcp", endpoint=lambda r: None, methods=["GET", "POST", "DELETE"])
-    mcp_route.app = mcp_asgi
-
-    app.routes.insert(0, sse_route)
-    app.routes.insert(0, mcp_route)

@@ -50,7 +50,7 @@ async def api_create_server(
     if body.github_url:
         # Clone from GitHub
         try:
-            clone_result = await github_manager.clone(body.github_url)
+            clone_result = await github_manager.clone(body.github_url, branch=body.branch)
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Clone failed: {e}")
 

@@ -14,6 +14,7 @@ const loading = ref(false)
 const githubForm = reactive({
   github_url: '',
   name: '',
+  branch: '',
   env: [] as { key: string; value: string }[],
 })
 
@@ -44,6 +45,7 @@ async function handleSubmit() {
       await serverApi.create({
         github_url: githubForm.github_url,
         name: githubForm.name || undefined,
+        branch: githubForm.branch || undefined,
         env: envToDict(githubForm.env),
       })
     } else {
@@ -70,6 +72,7 @@ async function handleSubmit() {
 function resetForms() {
   githubForm.github_url = ''
   githubForm.name = ''
+  githubForm.branch = ''
   githubForm.env = []
   manualForm.name = ''
   manualForm.command = ''
@@ -98,9 +101,14 @@ function resetForms() {
               size="large"
             />
           </el-form-item>
-          <el-form-item :label="t('server.serverName')">
-            <el-input v-model="githubForm.name" :placeholder="t('addDialog.namePlaceholder')" size="large" />
-          </el-form-item>
+          <div style="display: flex; gap: 12px">
+            <el-form-item :label="t('server.serverName')" style="flex: 1">
+              <el-input v-model="githubForm.name" :placeholder="t('addDialog.namePlaceholder')" size="large" />
+            </el-form-item>
+            <el-form-item :label="t('addDialog.branch')" style="flex: 1">
+              <el-input v-model="githubForm.branch" :placeholder="t('addDialog.branchPlaceholder')" size="large" />
+            </el-form-item>
+          </div>
           <el-form-item :label="t('server.envVars')">
             <div style="width: 100%">
               <div v-for="(item, i) in githubForm.env" :key="i" style="display: flex; gap: 8px; margin-bottom: 8px">

@@ -16,10 +16,11 @@ onMounted(async () => {
 })
 
 const configJson = computed(() => {
-  const origin = window.location.origin
+  const hostname = window.location.hostname
+  const mcpPort = parseInt(window.location.port || '9000') + 1
   return JSON.stringify({
     mcpServers: {
-      gateway: { url: `${origin}/mcp` }
+      gateway: { url: `http://${hostname}:${mcpPort}/mcp` }
     }
   }, null, 2)
 })

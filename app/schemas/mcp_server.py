@@ -4,6 +4,7 @@ from pydantic import BaseModel
 class ServerCreate(BaseModel):
     name: str | None = None
     github_url: str | None = None
+    branch: str | None = None
     local_path: str | None = None
     command: str | None = None
     args: list[str] | None = None

@@ -11,6 +11,7 @@ export const serverApi = {
   create(data: {
     name?: string
     github_url?: string
+    branch?: string
     local_path?: string
     command?: string
     args?: string[]
