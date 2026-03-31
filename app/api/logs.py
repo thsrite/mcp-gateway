@@ -57,7 +57,10 @@ async def api_stream_logs(
                     break
                 try:
                     entry = await asyncio.wait_for(queue.get(), timeout=30.0)
-                    yield f"data: {json.dumps(entry)}\n\n"
+                    # entry may be a LogEntry dataclass or a dict
+                    from dataclasses import asdict
+                    data = asdict(entry) if hasattr(entry, '__dataclass_fields__') else entry
+                    yield f"data: {json.dumps(data)}\n\n"
                 except asyncio.TimeoutError:
                     yield f": keepalive\n\n"
         finally:
