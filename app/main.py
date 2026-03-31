@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
     github_manager = GitHubManager(repos_dir=repos_dir)
     process_manager = ProcessManager()
     client_pool = ClientPool(log_collector=log_collector)
-    aggregator = Aggregator(client_pool=client_pool)
+    aggregator = Aggregator(client_pool=client_pool, log_collector=log_collector)
     gateway_server = GatewayServer(aggregator=aggregator)
 
     # Restore enabled servers

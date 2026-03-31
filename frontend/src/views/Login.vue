@@ -119,18 +119,16 @@ async function handleSubmit() {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255,255,255,0.06) 0%, transparent 40%);
+  background: radial-gradient(circle at 30% 40%, rgba(255,255,255,0.03) 0%, transparent 50%);
 }
 
 .login-card {
   position: relative;
   background: #fff;
-  border-radius: 20px;
-  padding: 40px;
-  width: 400px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border-radius: 16px;
+  padding: 36px;
+  width: 380px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
 .login-header {
@@ -139,18 +137,17 @@ async function handleSubmit() {
 }
 
 .login-logo {
-  width: 56px;
-  height: 56px;
-  background: var(--gradient-hero);
-  border-radius: 16px;
+  width: 48px;
+  height: 48px;
+  background: var(--text-primary);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-weight: 800;
-  font-size: 22px;
+  font-weight: 700;
+  font-size: 18px;
   margin: 0 auto 16px;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
 }
 
 .login-header h1 {

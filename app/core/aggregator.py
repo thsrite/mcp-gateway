@@ -4,7 +4,10 @@ from dataclasses import dataclass
 
 from mcp import types as mcp_types
 
+import json
+
 from app.core.client_pool import ClientPool
+from app.core.log_collector import LogCollector
 from app.utils.namespace import NAMESPACE_SEPARATOR, add_namespace, parse_namespace
 
 logger = logging.getLogger(__name__)
@@ -48,12 +51,17 @@ class NamespacedPrompt:
 class Aggregator:
     """Aggregates tools/resources/prompts from all MCP servers with namespace prefixes."""
 
-    def __init__(self, client_pool: ClientPool):
+    def __init__(self, client_pool: ClientPool, log_collector: LogCollector | None = None):
         self._pool = client_pool
+        self._log_collector = log_collector
         self._tools: dict[str, NamespacedTool] = {}
         self._resources: dict[str, NamespacedResource] = {}
         self._prompts: dict[str, NamespacedPrompt] = {}
         self._lock = asyncio.Lock()
+
+    def _log(self, server_id: int, level: str, message: str):
+        if self._log_collector:
+            self._log_collector.add_log(server_id, level, message)
 
     async def refresh(self):
         async with self._lock:
@@ -146,6 +154,7 @@ class Aggregator:
             }
 
             # Add new entries
+            self._log(server_id, "info", f"Server connected, loading tools...")
             try:
                 tools = await conn.list_tools()
                 for tool in tools:
@@ -262,7 +271,23 @@ class Aggregator:
                 f"Server '{nt.namespace}' is not available"
             )
 
-        return await conn.call_tool(nt.original_name, arguments)
+        args_brief = json.dumps(arguments, ensure_ascii=False)
+        if len(args_brief) > 200:
+            args_brief = args_brief[:200] + "..."
+        self._log(nt.server_id, "call", f"→ {nt.original_name}({args_brief})")
+
+        try:
+            result = await conn.call_tool(nt.original_name, arguments)
+            # Log result summary
+            if result.content:
+                first = result.content[0]
+                text = getattr(first, "text", str(first))
+                preview = text[:150] + "..." if len(text) > 150 else text
+                self._log(nt.server_id, "result", f"← {nt.original_name}: {preview}")
+            return result
+        except Exception as e:
+            self._log(nt.server_id, "error", f"✗ {nt.original_name}: {e}")
+            raise
 
     async def read_resource(self, namespaced_uri: str):
         nr = self._resources.get(namespaced_uri)
@@ -275,7 +300,14 @@ class Aggregator:
                 f"Server '{nr.namespace}' is not available"
             )
 
-        return await conn.read_resource(nr.original_uri)
+        self._log(nr.server_id, "call", f"→ read_resource({nr.original_uri})")
+        try:
+            result = await conn.read_resource(nr.original_uri)
+            self._log(nr.server_id, "result", f"← read_resource: OK")
+            return result
+        except Exception as e:
+            self._log(nr.server_id, "error", f"✗ read_resource: {e}")
+            raise
 
     async def get_prompt(self, namespaced_name: str, arguments: dict | None = None):
         np = self.resolve_prompt(namespaced_name)
@@ -288,4 +320,5 @@ class Aggregator:
                 f"Server '{np.namespace}' is not available"
             )
 
+        self._log(np.server_id, "call", f"→ get_prompt({np.original_name})")
         return await conn.get_prompt(np.original_name, arguments)

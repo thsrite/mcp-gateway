@@ -1,3 +1,4 @@
+import secrets
 from pathlib import Path
 
 import yaml
@@ -33,6 +34,7 @@ class AuthConfig(BaseModel):
     enabled: bool = False
     secret_key: str = "mcp-gateway-secret-change-me"
     token_expire_minutes: int = 1440  # 24 hours
+    api_key: str = ""  # Auto-generated for MCP endpoint auth
 
 
 class AppConfig(BaseSettings):

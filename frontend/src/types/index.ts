@@ -46,7 +46,7 @@ export interface SystemInfo {
   total_tools: number
   total_resources: number
   total_prompts: number
-  gateway_endpoint: string
+  mcp_port: number
 }
 
 export interface ApiResponse<T = any> {

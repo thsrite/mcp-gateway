@@ -76,5 +76,21 @@ class LogCollector:
         if queue in subs:
             subs.remove(queue)
 
+    def add_log(self, server_id: int, level: str, message: str):
+        """Directly add a log entry (for tool call logging, etc.)."""
+        self._logs.setdefault(server_id, deque(maxlen=self._max_lines))
+        entry = LogEntry(
+            timestamp=datetime.utcnow().isoformat(),
+            server_id=server_id,
+            level=level,
+            message=message,
+        )
+        self._logs[server_id].append(entry)
+        for queue in self._subscribers.get(server_id, []):
+            try:
+                queue.put_nowait(entry)
+            except asyncio.QueueFull:
+                pass
+
     def clear_logs(self, server_id: int):
         self._logs.pop(server_id, None)

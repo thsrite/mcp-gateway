@@ -1,11 +1,12 @@
 import logging
+import secrets
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 import jwt
 import yaml
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,8 +18,15 @@ from app.schemas.common import ApiResponse
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
 class LoginRequest(BaseModel):
@@ -59,7 +67,12 @@ async def get_current_user(
     if not credentials:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    username = verify_token(credentials.credentials)
+    token = credentials.credentials
+    # Accept API key as well
+    if token == settings.auth.api_key:
+        return None
+
+    username = verify_token(token)
     if not username:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
@@ -76,6 +89,7 @@ async def auth_status(session: AsyncSession = Depends(get_session)):
     return ApiResponse(data={
         "enabled": settings.auth.enabled,
         "initialized": user_count > 0,
+        "api_key": settings.auth.api_key if settings.auth.enabled else "",
     })
 
 
@@ -85,7 +99,7 @@ async def login(body: LoginRequest, session: AsyncSession = Depends(get_session)
         return ApiResponse(data={"token": "", "message": "Auth disabled"})
 
     user = await get_user_by_username(session, body.username)
-    if not user or not pwd_context.verify(body.password, user.password_hash):
+    if not user or not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     token = create_token(user.username)
@@ -102,7 +116,7 @@ async def setup_admin(body: LoginRequest, session: AsyncSession = Depends(get_se
     if len(body.username) < 2 or len(body.password) < 4:
         raise HTTPException(status_code=400, detail="Username min 2 chars, password min 4 chars")
 
-    hashed = pwd_context.hash(body.password)
+    hashed = hash_password(body.password)
     user = await create_user(session, body.username, hashed)
     token = create_token(user.username)
     logger.info(f"Admin user created: {user.username}")
@@ -118,10 +132,10 @@ async def change_password(
     if not settings.auth.enabled or not current_user:
         raise HTTPException(status_code=400, detail="Auth is not enabled")
 
-    if not pwd_context.verify(body.old_password, current_user.password_hash):
+    if not verify_password(body.old_password, current_user.password_hash):
         raise HTTPException(status_code=400, detail="Old password is incorrect")
 
-    hashed = pwd_context.hash(body.new_password)
+    hashed = hash_password(body.new_password)
     await update_user_password(session, current_user.id, hashed)
     return ApiResponse(message="Password changed")
 
@@ -160,9 +174,29 @@ async def toggle_auth(body: AuthToggleRequest, session: AsyncSession = Depends(g
                 detail="Please create an admin account first before enabling auth",
             )
 
+    # Auto-generate api_key if enabling and no key exists
+    api_key = settings.auth.api_key
+    if body.enabled and not api_key:
+        api_key = secrets.token_urlsafe(32)
+        settings.auth.api_key = api_key
+        _update_config_yaml("auth.api_key", api_key)
+
     # Update runtime config
     settings.auth.enabled = body.enabled
     # Persist to config.yaml
     _update_config_yaml("auth.enabled", body.enabled)
     logger.info(f"Auth {'enabled' if body.enabled else 'disabled'} via API")
-    return ApiResponse(data={"enabled": body.enabled})
+    return ApiResponse(data={"enabled": body.enabled, "api_key": api_key})
+
+
+@router.post("/regenerate-key", response_model=ApiResponse)
+async def regenerate_api_key(current_user=Depends(get_current_user)):
+    """Regenerate the MCP API key."""
+    if not settings.auth.enabled:
+        raise HTTPException(status_code=400, detail="Auth is not enabled")
+
+    api_key = secrets.token_urlsafe(32)
+    settings.auth.api_key = api_key
+    _update_config_yaml("auth.api_key", api_key)
+    logger.info("MCP API key regenerated")
+    return ApiResponse(data={"api_key": api_key})

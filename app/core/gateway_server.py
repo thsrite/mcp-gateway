@@ -3,6 +3,8 @@ import logging
 
 from mcp.server.lowlevel import Server
 from mcp import types
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from app.core.aggregator import Aggregator
 
@@ -59,13 +61,14 @@ class GatewayServer:
         """Start the MCP server on a dedicated port using uvicorn."""
         from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
         from starlette.applications import Starlette
+        from starlette.middleware import Middleware
         from starlette.routing import Route
         import uvicorn
 
         session_manager = StreamableHTTPSessionManager(
             app=self._server,
-            json_response=False,
-            stateless=False,
+            json_response=True,
+            stateless=True,
         )
 
         # Build a standalone Starlette app
@@ -74,6 +77,7 @@ class GatewayServer:
 
         starlette_app = Starlette(
             routes=[Route("/mcp", endpoint=http_app, methods=["GET", "POST", "DELETE"])],
+            middleware=[Middleware(BearerAuthMiddleware)],
             lifespan=lambda app: session_manager.run(),
         )
 
@@ -95,3 +99,43 @@ class GatewayServer:
             except (asyncio.CancelledError, Exception):
                 pass
             logger.info("MCP Gateway endpoint stopped")
+
+
+class BearerAuthMiddleware:
+    """ASGI middleware that validates Bearer token against the configured API key.
+    Always loaded; checks auth.enabled at runtime so toggling works without restart."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        from app.config import settings
+        if not settings.auth.enabled:
+            await self.app(scope, receive, send)
+            return
+
+        headers = dict(scope.get("headers", []))
+        auth_header = headers.get(b"authorization", b"").decode()
+
+        if not auth_header.startswith("Bearer "):
+            response = JSONResponse(
+                {"error": "Authentication required. Provide Bearer token."},
+                status_code=401,
+            )
+            await response(scope, receive, send)
+            return
+
+        token = auth_header[7:]
+        # Check against API key first, then try JWT
+        if token != settings.auth.api_key:
+            from app.api.auth import verify_token
+            if not verify_token(token):
+                response = JSONResponse({"error": "Invalid token"}, status_code=401)
+                await response(scope, receive, send)
+                return
+
+        await self.app(scope, receive, send)
