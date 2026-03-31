@@ -142,6 +142,34 @@ auth:
   token_expire_minutes: 1440
 ```
 
+## 添加 MCP 服务
+
+### 从 GitHub 导入
+
+在 Web UI 中填入 GitHub URL，Gateway 会自动克隆、检测项目类型、安装依赖并启动。
+
+**Python 项目**要求：
+- 包含 `pyproject.toml`（或 `setup.py`）
+- Gateway 自动创建 `.venv` 并 `pip install -e .`
+- 启动命令自动检测优先级：
+  1. `[project.scripts]` 定义的入口 → `.venv/bin/<script>`
+  2. `project.name` → `python -m <module>`
+  3. 常见入口文件：`server.py`、`main.py`
+
+**Node.js 项目**要求：
+- 包含 `package.json`
+- Gateway 自动 `npm install`，有 `tsconfig.json` 时自动 `npm run build`
+- 启动命令自动检测优先级：
+  1. `package.json` 的 `bin` 字段
+  2. `scripts.start`
+  3. 常见入口：`dist/index.js`、`index.js`
+
+> 绝大多数 GitHub 上的标准 MCP Server 仓库可直接导入。如果自动检测不准确，可在「配置管理」中手动修改启动命令。
+
+### 手动配置
+
+填写服务名称、启动命令（如 `python`、`node`、`npx`）、启动参数、本地路径和环境变量即可。
+
 ## 架构
 
 ```
