@@ -18,12 +18,56 @@
 
 ### Docker 部署（推荐）
 
+#### 方式一：使用预构建镜像（最快）
+
 ```bash
-# 克隆项目
+# 创建数据目录和配置文件
+mkdir -p mcp-gateway && cd mcp-gateway
+mkdir -p data
+
+# 下载示例配置
+curl -o config.yaml https://raw.githubusercontent.com/thsrite/mcp-gateway/main/config.yaml.example
+
+# 启动（amd64 / arm64 均可）
+docker run -d \
+  --name mcp-gateway \
+  --restart unless-stopped \
+  -p 9000:9000 \
+  -p 9001:9001 \
+  -v $(pwd)/data:/app/data \
+  -v $(pwd)/config.yaml:/app/config.yaml \
+  -e TZ=Asia/Shanghai \
+  thsrite/mcp-gateway:latest
+```
+
+#### 方式二：Docker Compose（预构建镜像）
+
+```yaml
+# docker-compose.yml
+services:
+  mcp-gateway:
+    image: thsrite/mcp-gateway:latest
+    container_name: mcp-gateway
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./data:/app/data
+      - ./config.yaml:/app/config.yaml
+    environment:
+      - TZ=Asia/Shanghai
+```
+
+```bash
+docker compose up -d
+```
+
+#### 方式三：从源码构建
+
+```bash
 git clone https://github.com/thsrite/mcp-gateway.git
 cd mcp-gateway
-
-# 启动
 docker compose up -d
 ```
 
