@@ -1,0 +1,13 @@
+services:
+  mcp-gateway:
+    build: .
+    container_name: mcp-gateway
+    restart: unless-stopped
+    ports:
+      - "9000:9000"  # Web UI
+      - "9001:9001"  # MCP Endpoint
+    volumes:
+      - ./data:/app/data          # SQLite DB + cloned repos
+      - ./config.yaml:/app/config.yaml  # Configuration
+    environment:
+      - TZ=Asia/Shanghai
