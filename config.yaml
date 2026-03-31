@@ -1,0 +1,16 @@
+server:
+  host: "0.0.0.0"
+  port: 9000
+
+database:
+  url: "sqlite+aiosqlite:///data/gateway.db"
+
+repos:
+  base_dir: "data/repos"
+
+scheduler:
+  update_interval_minutes: 30
+  health_check_interval_seconds: 60
+
+log:
+  max_lines_per_server: 1000

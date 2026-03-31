@@ -1,0 +1,23 @@
+[project]
+name = "mcp-gateway"
+version = "0.1.0"
+description = "A comprehensive HTTP MCP Gateway that aggregates multiple MCP servers"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "mcp>=1.0.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "aiosqlite>=0.20.0",
+    "apscheduler>=3.10.0",
+    "pydantic-settings>=2.0.0",
+    "pyyaml>=6.0",
+    "httpx>=0.27.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
