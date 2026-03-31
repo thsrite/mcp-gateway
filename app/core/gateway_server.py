@@ -68,12 +68,12 @@ class GatewayServer:
             stateless=False,
         )
 
-        # Build a standalone Starlette app (same as FastMCP.streamable_http_app)
+        # Build a standalone Starlette app
         from mcp.server.fastmcp.server import StreamableHTTPASGIApp
         http_app = StreamableHTTPASGIApp(session_manager)
 
         starlette_app = Starlette(
-            routes=[Route("/mcp", endpoint=http_app)],
+            routes=[Route("/mcp", endpoint=http_app, methods=["GET", "POST", "DELETE"])],
             lifespan=lambda app: session_manager.run(),
         )
 
