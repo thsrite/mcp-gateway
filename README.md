@@ -30,6 +30,9 @@ docker compose up -d
 ### 手动部署
 
 ```bash
+# 复制配置文件
+cp config.yaml.example config.yaml
+
 # 后端
 pip install .
 python run.py
@@ -69,7 +72,7 @@ Authorization: Bearer <your-api-key>
 
 ## 配置文件
 
-`config.yaml`:
+复制 `config.yaml.example` 为 `config.yaml` 后按需修改：
 
 ```yaml
 server:
