@@ -26,7 +26,7 @@ COPY run.py ./
 COPY --from=frontend-build /build/dist ./frontend/dist/
 
 # Copy default config (user can mount their own)
-COPY config.yaml ./
+COPY config.yaml.example ./config.yaml
 
 # Data directory for SQLite DB and cloned repos
 RUN mkdir -p data/repos

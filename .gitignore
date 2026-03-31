@@ -9,3 +9,8 @@ build/
 node_modules/
 frontend/dist/
 /.claude/
+/.vite/
+.idea/
+.vscode/
+frontend/.vscode/
+config.yaml
